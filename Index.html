@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Student Task Tracker</title>
+<style>
+body { font-family: Arial; max-width: 600px; margin: auto; padding: 20px; }
+input, button { display: block; margin: 5px 0; width: 100%; padding: 5px; }
+.task { display: flex; justify-content: space-between; margin: 3px 0; border: 1px solid #ccc; padding: 5px; border-radius: 4px; }
+.done { text-decoration: line-through; color: gray; }
+</style>
+</head>
+<body>
+
+<h1>Student Task Tracker</h1>
+
+<div id="loginDiv">
+  <label>Username:</label>
+  <input type="text" id="usernameInput">
+  <label>Password:</label>
+  <input type="text" id="passwordInput">
+  <button onclick="confirmLogin()">Confirm</button>
+</div>
+
+<div id="clubDiv" style="display:none;">
+  <label>Enter clubs (type "done" when finished):</label>
+  <input type="text" id="clubInput">
+  <button onclick="addClub()">Add Club</button>
+  <p id="clubsList"></p>
+</div>
+
+<div id="periodDiv" style="display:none;">
+  <p>Enter your 8 periods:</p>
+  <div id="periodInputs"></div>
+  <button onclick="savePeriods()">Save Periods</button>
+</div>
+
+<div id="taskDiv" style="display:none;">
+  <label>Action:</label>
+  <select id="actionSelect" onchange="chooseAction()">
+    <option value="">--Select Action--</option>
+    <option value="add">Add Task</option>
+    <option value="view">View Tasks</option>
+    <option value="delete">Delete Task</option>
+    <option value="edit">Edit Task</option>
+    <option value="due">Add Due Date</option>
+    <option value="progress">Log Progress</option>
+  </select>
+
+  <div id="taskInputs"></div>
+  <h3>Tasks:</h3>
+  <div id="taskList"></div>
+</div>
+
+<script>
+let username = "";
+let password = "";
+let clubs = [];
+let periods = [];
+let tasks = [];
+
+function confirmLogin() {
+    username = document.getElementById("usernameInput").value.trim();
+    password = document.getElementById("passwordInput").value.trim();
+    if (!username || !password) { alert("Enter both username and password"); return; }
+    let correct = confirm("Is this correct? Username: " + username + " Password: " + password);
+    if (!correct) return;
+    document.getElementById("loginDiv").style.display = "none";
+    document.getElementById("clubDiv").style.display = "block";
+}
+
+function addClub() {
+    const club = document.getElementById("clubInput").value.trim();
+    if (club.toLowerCase() === "done") {
+        document.getElementById("clubDiv").style.display = "none";
+        startPeriods();
+        return;
+    }
+    if (club) clubs.push(club);
+    document.getElementById("clubsList").textContent = "Clubs: " + clubs.join(", ");
+    document.getElementById("clubInput").value = "";
+}
+
+function startPeriods() {
+    document.getElementById("periodDiv").style.display = "block";
+    const container = document.getElementById("periodInputs");
+    for (let i = 1; i <= 8; i++) {
+        const input = document.createElement("input");
+        input.id = "period" + i;
+        input.placeholder = "Period " + i;
+        container.appendChild(input);
+    }
+}
+
+function savePeriods() {
+    periods = [];
+    for (let i = 1; i <= 8; i++) {
+        const val = document.getElementById("period" + i).value.trim();
+        if (val) periods.push(val);
+    }
+    if (periods.length < 8) { alert("Enter all 8 periods"); return; }
+    document.getElementById("periodDiv").style.display = "none";
+    document.getElementById("taskDiv").style.display = "block";
+    viewTasks();
+}
+
+function chooseAction() {
+    const action = document.getElementById("actionSelect").value;
+    const container = document.getElementById("taskInputs");
+    container.innerHTML = "";
+    if (action === "add") {
+        container.innerHTML = `<input type="text" id="taskClass" placeholder="Class or club">
+                               <input type="text" id="taskName" placeholder="Task name">
+                               <button onclick="addTask()">Add Task</button>`;
+    } else if (action === "delete") {
+        container.innerHTML = `<input type="text" id="taskIndex" placeholder="Exact task text to delete">
+                               <button onclick="deleteTask()">Delete</button>`;
+    } else if (action === "edit") {
+        container.innerHTML = `<input type="text" id="taskIndex" placeholder="Exact task text to edit">
+                               <input type="text" id="newTaskName" placeholder="New task name">
+                               <button onclick="editTask()">Edit</button>`;
+    } else if (action === "due") {
+        container.innerHTML = `<input type="text" id="taskIndex" placeholder="Exact task text">
+                               <input type="text" id="dueDate" placeholder="Due date">
+                               <button onclick="addDue()">Add Due Date</button>`;
+    } else if (action === "progress") {
+        container.innerHTML = `<input type="text" id="taskIndex" placeholder="Exact task text">
+                               <input type="text" id="progress" placeholder="Progress update">
+                               <button onclick="logProgress()">Log Progress</button>`;
+    }
+}
+
+function addTask() {
+    const cls = document.getElementById("taskClass").value.trim();
+    const name = document.getElementById("taskName").value.trim();
+    if (!cls || !name) { alert("Enter class/club and task"); return; }
+    if (!periods.includes(cls) && !clubs.includes(cls)) { alert("Class or club does not exist"); return; }
+    tasks.push(cls + ": " + name);
+    viewTasks();
+}
+
+function viewTasks() {
+    const container = document.getElementById("taskList");
+    container.innerHTML = "";
+    tasks.forEach(t => {
+        const div = document.createElement("div");
+        div.textContent = t;
+        div.className = "task";
+        container.appendChild(div);
+    });
+}
+
+function deleteTask() {
+    const idx = document.getElementById("taskIndex").value.trim();
+    const i = tasks.indexOf(idx);
+    if (i !== -1) { tasks.splice(i,1); viewTasks(); alert("Task deleted"); }
+    else alert("Task does not exist");
+}
+
+function editTask() {
+    const idx = document.getElementById("taskIndex").value.trim();
+    const newName = document.getElementById("newTaskName").value.trim();
+    const i = tasks.indexOf(idx);
+    if (i !== -1) { tasks[i] = newName; viewTasks(); alert("Task edited"); }
+    else alert("Task does not exist");
+}
+
+function addDue() {
+    const idx = document.getElementById("taskIndex").value.trim();
+    const due = document.getElementById("dueDate").value.trim();
+    const i = tasks.indexOf(idx);
+    if (i !== -1) { tasks[i] = tasks[i] + " Due: " + due; viewTasks(); alert("Due date added"); }
+    else alert("Task does not exist");
+}
+
+function logProgress() {
+    const idx = document.getElementById("taskIndex").value.trim();
+    const prog = document.getElementById("progress").value.trim();
+    const i = tasks.indexOf(idx);
+    if (i !== -1) { tasks[i] = tasks[i] + " Progress: " + prog; viewTasks(); alert("Progress logged"); }
+    else alert("Task does not exist");
+}
+</script>
+
+</body>
+</html>
